@@ -1,7 +1,7 @@
 /Basics/.vs/*
 /*/*/obj/*
 /*/*/bin/*
-.idea
+.idea/*
 /csharp-basics/*/*/.vs/*
 /csharp-basics/exercises/*/*/obj/*
 /csharp-basics/exercises/*/*/bin/*
