@@ -20,10 +20,12 @@ public class CodinGame
     {
         var modeArr = mode == "RANDOM" ? new[] { "FASTEST", "REVERSE", "SHORTEST" } : new[] { mode };
         var languageArr = language == "Any" ? new string[] { } : new[] { language };
+        
         var response = await Request("ClashOfCode/CreatePrivateClash",
             new object[] { _userId, languageArr, modeArr });
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
-        return result.publicHandle;
+        
+        return result == null ? "something broke, try again" : result.publicHandle;
     }
 
     public async Task LeaveClash(string publicHandle)
@@ -35,13 +37,18 @@ public class CodinGame
     {
         var response = await Request("ClashOfCode/FindClashByHandle", new object[] { handle });
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
-        return result.players.Count;
+        return result == null ? 0 : result.players.Count;
     }
 
     public async Task<List<string>> GetLanguageIds()
     {
-        var response = await Request("ProgrammingLanguage/FindAllIds", new object[] { });
-        var result = await response.Content.ReadFromJsonAsync<List<string>>();
+        List<string>? result = null;
+        while (result == null)
+        {
+            var response = await Request("ProgrammingLanguage/FindAllIds", new object[] { });
+            result = await response.Content.ReadFromJsonAsync<List<string>>();
+        }
+
         return result;
     }
 
@@ -51,8 +58,8 @@ public class CodinGame
         requestMessage.Headers.TryAddWithoutValidation("cookie", $"rememberMe={_rememberMeCookie}");
         requestMessage.Content = JsonContent.Create(parameters);
         requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=UTF-8");
-        var response = await _client
+        
+        return await _client
             .SendAsync(requestMessage);
-        return response;
     }
 }

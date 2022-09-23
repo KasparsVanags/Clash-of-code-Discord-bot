@@ -56,10 +56,12 @@ public class Program : InteractionModuleBase
             .WithName("clash")
             .WithDescription("starts a new clash of code lobby")
             .AddOption(
-                "mode", ApplicationCommandOptionType.String, "fastest, reverse, shortest or random", true,
+                "mode", ApplicationCommandOptionType.String,
+                "fastest, reverse, shortest or random", true,
                 choices: modes.ToArray())
             .AddOption(
-                "language", ApplicationCommandOptionType.String, "name of programming language or \"any\"", true);
+                "language", ApplicationCommandOptionType.String,
+                "name of programming language or \"any\"", true);
         try
         {
             await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
@@ -83,33 +85,47 @@ public class Program : InteractionModuleBase
 
     private async Task HandleClashCommand(SocketSlashCommand command)
     {
+        await command.RespondAsync(":hourglass: Creating a lobby...");
+        var modeInput = command.Data.Options.First().Value.ToString();
+        var languageInput = command.Data.Options.ElementAt(1).Value.ToString();
+        if (string.IsNullOrEmpty(modeInput) || string.IsNullOrEmpty(languageInput)) return;
+        
         var mode = _validModes.Find(
-            x => x.ToLower().Contains(command.Data.Options.First().Value.ToString().ToLower()));
+            x => x.ToLower().Contains(modeInput.ToLower()));
         var language = _validLanguages.Find(
-            x => x.ToLower().Contains(command.Data.Options.ElementAt(1).Value.ToString().ToLower()));
-
+            x => x.ToLower().Contains(languageInput.ToLower()));
         if (mode == null || language == null) return;
+        
         var handle = await _codinGame.CreateClash(mode, language);
         mode = mode switch
         {
-            "RANDOM" => ":game_die: Random",
+            
             "FASTEST" => ":rocket: Fastest",
             "REVERSE" => ":brain: Reverse",
-            _ => ":scroll: Shortest"
+            "SHORTEST" => ":scroll: Shortest",
+            _ => ":game_die: Random"
         };
-        await command.RespondAsync($"{mode}  -  {language}  -  started by {command.User.Mention}\nhttps://www.codingame.com/clashofcode/clash/{handle}");
+        
+        await command.ModifyOriginalResponseAsync(x => 
+            x.Content = $"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
+                        $"https://www.codingame.com/clashofcode/clash/{handle}");
         LeaveClash(handle);
-        DeleteResponse(command);
+        DeleteResponseAfterDelay(command);
     }
 
     private async Task LeaveClash(string handle)
     {
-        while (await _codinGame.GetPlayerCount(handle) < 2) await Task.Delay(1000);
+        var playerCount = 1;
+        while (playerCount == 1)
+        {
+            playerCount = await _codinGame.GetPlayerCount(handle);
+            await Task.Delay(500);
+        }
 
         await _codinGame.LeaveClash(handle);
     }
 
-    private async Task DeleteResponse(SocketSlashCommand command)
+    private async Task DeleteResponseAfterDelay(SocketSlashCommand command)
     {
         await Task.Delay(300000);
         await command.DeleteOriginalResponseAsync();
