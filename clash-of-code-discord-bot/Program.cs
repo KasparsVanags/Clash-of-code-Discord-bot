@@ -185,9 +185,6 @@ public class Program : InteractionModuleBase
         var results = _validLanguages.Where(
             x => x.ToLower().Contains(input.ToLower())).Select(x => new AutocompleteResult(x, x)).ToArray();
 
-        if (results.Length == 0)
-            await interaction.RespondAsync();
-        else
-            await interaction.RespondAsync(results.Take(25));
+        await interaction.RespondAsync(results.Length == 0 ? null : results.Take(25));
     }
 }
