@@ -21,7 +21,10 @@ public class Program : InteractionModuleBase
 
     private Program()
     {
-        _client = new DiscordSocketClient();
+        _client = new DiscordSocketClient(new DiscordSocketConfig()
+        {
+            GatewayIntents = GatewayIntents.None
+        });
         _codinGame = new CodinGame(Config["ClashOfCode:Cookie"]);
         _validModes.AddRange(Config["ClashOfCode:Modes"].Split(',').ToList());
     }
