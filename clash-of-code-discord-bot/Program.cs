@@ -22,7 +22,7 @@ public class Program : InteractionModuleBase
 
     private Program()
     {
-        _client = new DiscordSocketClient(new DiscordSocketConfig()
+        _client = new DiscordSocketClient(new DiscordSocketConfig
         {
             GatewayIntents = GatewayIntents.None
         });
@@ -114,7 +114,7 @@ public class Program : InteractionModuleBase
             DeleteResponseAfterDelay(message, 5000);
             return;
         }
-        
+
         if (language == null)
         {
             var message = await command.FollowupAsync($"Invalid language: {languageInput}", ephemeral: true);
@@ -146,8 +146,9 @@ public class Program : InteractionModuleBase
             _ => mode
         };
         var response = await command
-            .FollowupAsync($"{mode}  -  {(language == "Any" ? "Any language" : language)}  -  started by {command.User.Mention}\n" +
-                        $"https://www.codingame.com/clashofcode/clash/{handle}");
+            .FollowupAsync(
+                $"{mode}  -  {(language == "Any" ? "Any language" : language)}  -  started by {command.User.Mention}\n" +
+                $"https://www.codingame.com/clashofcode/clash/{handle}");
         LeaveLobbyWhenPlayerJoins(handle);
         DeleteResponseAfterDelay(response, 300000);
     }
@@ -185,12 +186,8 @@ public class Program : InteractionModuleBase
             x => x.ToLower().Contains(input.ToLower())).Select(x => new AutocompleteResult(x, x)).ToArray();
 
         if (results.Length == 0)
-        {
             await interaction.RespondAsync();
-        }
         else
-        {
             await interaction.RespondAsync(results.Take(25));
-        }
     }
 }

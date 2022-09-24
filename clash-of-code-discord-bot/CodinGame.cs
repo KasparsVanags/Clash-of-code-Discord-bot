@@ -29,9 +29,7 @@ public class CodinGame
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
 
         if (result == null || string.IsNullOrEmpty(result.publicHandle))
-        {
             throw new LobbyException("Couldn't create a lobby");
-        }
 
         return result.publicHandle;
     }
@@ -51,7 +49,7 @@ public class CodinGame
     public async Task<List<string>> GetLanguageIds()
     {
         var response = await Request("ProgrammingLanguage/FindAllIds", Array.Empty<object>());
-        return await response.Content.ReadFromJsonAsync<List<string>>() ?? 
+        return await response.Content.ReadFromJsonAsync<List<string>>() ??
                throw new LanguageIdException("Couldn't get language ids");
     }
 
@@ -62,8 +60,8 @@ public class CodinGame
         requestMessage.Content = JsonContent.Create(parameters);
         requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=UTF-8");
 
-        
+
         return await _client
-                .SendAsync(requestMessage);
+            .SendAsync(requestMessage);
     }
 }
