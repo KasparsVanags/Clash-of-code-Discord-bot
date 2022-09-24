@@ -105,7 +105,7 @@ public class Program : InteractionModuleBase
 
         if (mode == null || language == null) return;
 
-        var modeArr = mode == "RANDOM" ? _validModes.ToArray() : new[] { mode };
+        var modeArr = mode == "RANDOM" ? _validModes.Where(x => x != "RANDOM").ToArray() : new[] { mode };
         var handle = await _codinGame.CreateClash(modeArr, language);
 
         mode = mode switch
