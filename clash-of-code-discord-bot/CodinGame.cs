@@ -11,21 +11,21 @@ public class CodinGame
 
     public CodinGame(string rememberMeCookie)
     {
+        //Cookie expires after 1 year
         _rememberMeCookie = rememberMeCookie;
         _userId = rememberMeCookie[..7];
         _client.BaseAddress = new Uri("https://www.codingame.com/services/");
     }
 
-    public async Task<string> CreateClash(string mode, string language)
+    public async Task<string> CreateClash(string[] mode, string language)
     {
-        var modeArr = mode == "RANDOM" ? new[] { "FASTEST", "REVERSE", "SHORTEST" } : new[] { mode };
-        var languageArr = language == "Any" ? new string[] { } : new[] { language };
+        var languageArr = language == "Any" ? Array.Empty<string>() : new[] { language };
 
         var response = await Request("ClashOfCode/CreatePrivateClash",
-            new object[] { _userId, languageArr, modeArr });
+            new object[] { _userId, languageArr, mode });
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
 
-        return result == null ? "something broke, try again" : result.publicHandle;
+        return result == null ? "something broke, bot cookie expired?" : result.publicHandle;
     }
 
     public async Task LeaveClash(string publicHandle)

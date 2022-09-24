@@ -101,7 +101,9 @@ public class Program : InteractionModuleBase
 
         if (mode == null || language == null) return;
 
-        var handle = await _codinGame.CreateClash(mode, language);
+        var modeArr = mode == "RANDOM" ? _validModes.ToArray() : new[] { mode };
+        var handle = await _codinGame.CreateClash(modeArr, language);
+
         mode = mode switch
         {
             "FASTEST" => ":rocket: Fastest",
@@ -110,7 +112,6 @@ public class Program : InteractionModuleBase
             "RANDOM" => ":game_die: Random",
             _ => mode
         };
-
         await command.ModifyOriginalResponseAsync(x =>
             x.Content = $"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
                         $"https://www.codingame.com/clashofcode/clash/{handle}");
