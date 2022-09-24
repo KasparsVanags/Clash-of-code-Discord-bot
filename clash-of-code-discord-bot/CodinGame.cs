@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using clash_of_code_bot.Exceptions;
 
 namespace clash_of_code_bot;
 
@@ -12,6 +13,9 @@ public class CodinGame
     public CodinGame(string rememberMeCookie)
     {
         //Cookie expires after 1 year
+        if (string.IsNullOrEmpty(rememberMeCookie))
+            throw new MissingCookieException("Codingame cookie not found, check appsettings.json");
+
         _rememberMeCookie = rememberMeCookie;
         _userId = rememberMeCookie[..7];
         _client.BaseAddress = new Uri("https://www.codingame.com/services/");

@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using clash_of_code_bot.Exceptions;
+using Discord;
 using Discord.Interactions;
 using Discord.Net;
 using Discord.WebSocket;
@@ -37,7 +38,10 @@ public class Program : InteractionModuleBase
         _client.SlashCommandExecuted += SlashCommandHandler;
         _client.AutocompleteExecuted += GenerateSuggestionsAsync;
 
-        await _client.LoginAsync(TokenType.Bot, Config["Discord:Token"]);
+        var token = Config["Discord:Token"];
+        if (string.IsNullOrEmpty(token))
+            throw new MissingTokenException("Discord token not found, check appsettings.json");
+        await _client.LoginAsync(TokenType.Bot, token);
         await _client.StartAsync();
         _validLanguages.AddRange(await _codinGame.GetLanguageIds());
 
