@@ -49,8 +49,9 @@ public class CodinGame
         List<string>? result = null;
         while (result == null)
         {
-            var response = await Request("ProgrammingLanguage/FindAllIds", new object[] { });
+            var response = await Request("ProgrammingLanguage/FindAllIds", Array.Empty<object>());
             result = await response.Content.ReadFromJsonAsync<List<string>>();
+            await Task.Delay(500);
         }
 
         return result;

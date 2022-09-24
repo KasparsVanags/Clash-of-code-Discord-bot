@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.Net;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -73,6 +74,7 @@ public class Program : InteractionModuleBase
 
         try
         {
+            await _client.SetGameAsync("/clash mode language");
             await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
         }
         catch (HttpException exception)
@@ -94,7 +96,7 @@ public class Program : InteractionModuleBase
 
     private async Task HandleClashCommand(SocketSlashCommand command)
     {
-        await command.RespondAsync(":hourglass: Creating a lobby...");
+        await command.DeferAsync();
 
         var modeInput = command.Data.Options.First().Value.ToString();
         var languageInput = command.Data.Options.ElementAt(1).Value.ToString();
@@ -106,7 +108,19 @@ public class Program : InteractionModuleBase
         var language = _validLanguages.Find(
             x => x.ToLower().Contains(languageInput.ToLower()));
 
-        if (mode == null || language == null) return;
+        if (mode == null)
+        {
+            var message = await command.FollowupAsync($"Invalid mode: {modeInput}", ephemeral: true);
+            DeleteResponseAfterDelay(message, 5000);
+            return;
+        }
+        
+        if (language == null)
+        {
+            var message = await command.FollowupAsync($"Invalid language: {languageInput}", ephemeral: true);
+            DeleteResponseAfterDelay(message, 5000);
+            return;
+        }
 
         var modeArr = mode == "RANDOM" ? _validModes.Where(x => x != "RANDOM").ToArray() : new[] { mode };
         var handle = await _codinGame.CreateClash(modeArr, language);
@@ -119,11 +133,11 @@ public class Program : InteractionModuleBase
             "RANDOM" => ":game_die: Random",
             _ => mode
         };
-        await command.ModifyOriginalResponseAsync(x =>
-            x.Content = $"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
+        var link = await command
+            .FollowupAsync($"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
                         $"https://www.codingame.com/clashofcode/clash/{handle}");
         LeaveClash(handle);
-        DeleteResponseAfterDelay(command);
+        DeleteResponseAfterDelay(link, 300000);
     }
 
     private async Task LeaveClash(string handle)
@@ -138,10 +152,10 @@ public class Program : InteractionModuleBase
         await _codinGame.LeaveClash(handle);
     }
 
-    private async Task DeleteResponseAfterDelay(SocketSlashCommand command)
+    private async Task DeleteResponseAfterDelay(RestFollowupMessage message, int delay)
     {
-        await Task.Delay(300000);
-        await command.DeleteOriginalResponseAsync();
+        await Task.Delay(delay);
+        await message.DeleteAsync();
     }
 
     private Task Log(LogMessage msg)
@@ -158,6 +172,13 @@ public class Program : InteractionModuleBase
         var results = _validLanguages.Where(
             x => x.ToLower().Contains(input.ToLower())).Select(x => new AutocompleteResult(x, x)).ToArray();
 
-        await interaction.RespondAsync(results.Take(25));
+        if (results.Length == 0)
+        {
+            await interaction.RespondAsync();
+        }
+        else
+        {
+            await interaction.RespondAsync(results.Take(25));
+        }
     }
 }
