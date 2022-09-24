@@ -15,14 +15,14 @@ public class Program : InteractionModuleBase
 
     private readonly DiscordSocketClient _client;
     private readonly CodinGame _codinGame;
-    private readonly List<string> _validModes;
-    private List<string> _validLanguages;
+    private readonly List<string> _validLanguages = new() { "Any" };
+    private readonly List<string> _validModes = new() { "RANDOM" };
 
     private Program()
     {
         _client = new DiscordSocketClient();
         _codinGame = new CodinGame(Config["ClashOfCode:Cookie"]);
-        _validModes = Config["ClashOfCode:Modes"].Split(',').ToList();
+        _validModes.AddRange(Config["ClashOfCode:Modes"].Split(',').ToList());
     }
 
     public static Task Main(string[] args)
@@ -33,18 +33,19 @@ public class Program : InteractionModuleBase
     private async Task MainAsync()
     {
         _client.Log += Log;
-        await _client.LoginAsync(TokenType.Bot, Config["Discord:Token"]);
-        await _client.StartAsync();
         _client.Ready += Client_Ready;
         _client.SlashCommandExecuted += SlashCommandHandler;
+        _client.AutocompleteExecuted += GenerateSuggestionsAsync;
+
+        await _client.LoginAsync(TokenType.Bot, Config["Discord:Token"]);
+        await _client.StartAsync();
+        _validLanguages.AddRange(await _codinGame.GetLanguageIds());
 
         await Task.Delay(-1);
     }
 
     private async Task Client_Ready()
     {
-        _validLanguages = await _codinGame.GetLanguageIds();
-        _validLanguages.Add("Any");
         var modes = new List<ApplicationCommandOptionChoiceProperties>();
         _validModes.ForEach(x => modes.Add(new ApplicationCommandOptionChoiceProperties
         {
@@ -61,7 +62,8 @@ public class Program : InteractionModuleBase
                 choices: modes.ToArray())
             .AddOption(
                 "language", ApplicationCommandOptionType.String,
-                "name of programming language or \"any\"", true);
+                "name of programming language or \"any\"", true, isAutocomplete: true);
+
         try
         {
             await _client.CreateGlobalApplicationCommandAsync(globalCommand.Build());
@@ -86,27 +88,30 @@ public class Program : InteractionModuleBase
     private async Task HandleClashCommand(SocketSlashCommand command)
     {
         await command.RespondAsync(":hourglass: Creating a lobby...");
+
         var modeInput = command.Data.Options.First().Value.ToString();
         var languageInput = command.Data.Options.ElementAt(1).Value.ToString();
+
         if (string.IsNullOrEmpty(modeInput) || string.IsNullOrEmpty(languageInput)) return;
-        
+
         var mode = _validModes.Find(
             x => x.ToLower().Contains(modeInput.ToLower()));
         var language = _validLanguages.Find(
             x => x.ToLower().Contains(languageInput.ToLower()));
+
         if (mode == null || language == null) return;
-        
+
         var handle = await _codinGame.CreateClash(mode, language);
         mode = mode switch
         {
-            
             "FASTEST" => ":rocket: Fastest",
             "REVERSE" => ":brain: Reverse",
             "SHORTEST" => ":scroll: Shortest",
-            _ => ":game_die: Random"
+            "RANDOM" => ":game_die: Random",
+            _ => mode
         };
-        
-        await command.ModifyOriginalResponseAsync(x => 
+
+        await command.ModifyOriginalResponseAsync(x =>
             x.Content = $"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
                         $"https://www.codingame.com/clashofcode/clash/{handle}");
         LeaveClash(handle);
@@ -135,5 +140,16 @@ public class Program : InteractionModuleBase
     {
         Console.WriteLine(msg.ToString());
         return Task.CompletedTask;
+    }
+
+    private async Task GenerateSuggestionsAsync(SocketAutocompleteInteraction interaction)
+    {
+        var input = interaction.Data.Options.ElementAt(1).Value.ToString();
+        if (input == null) return;
+
+        var results = _validLanguages.Where(
+            x => x.ToLower().Contains(input.ToLower())).Select(x => new AutocompleteResult(x, x)).ToArray();
+
+        await interaction.RespondAsync(results.Take(25));
     }
 }

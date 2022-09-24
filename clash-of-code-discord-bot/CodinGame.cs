@@ -20,11 +20,11 @@ public class CodinGame
     {
         var modeArr = mode == "RANDOM" ? new[] { "FASTEST", "REVERSE", "SHORTEST" } : new[] { mode };
         var languageArr = language == "Any" ? new string[] { } : new[] { language };
-        
+
         var response = await Request("ClashOfCode/CreatePrivateClash",
             new object[] { _userId, languageArr, modeArr });
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
-        
+
         return result == null ? "something broke, try again" : result.publicHandle;
     }
 
@@ -58,7 +58,7 @@ public class CodinGame
         requestMessage.Headers.TryAddWithoutValidation("cookie", $"rememberMe={_rememberMeCookie}");
         requestMessage.Content = JsonContent.Create(parameters);
         requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=UTF-8");
-        
+
         return await _client
             .SendAsync(requestMessage);
     }
