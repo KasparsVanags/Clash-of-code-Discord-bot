@@ -123,7 +123,19 @@ public class Program : InteractionModuleBase
         }
 
         var modeArr = mode == "RANDOM" ? _validModes.Where(x => x != "RANDOM").ToArray() : new[] { mode };
-        var handle = await _codinGame.CreateClash(modeArr, language);
+        string handle;
+        try
+        {
+            handle = await _codinGame.CreateClash(modeArr, language);
+        }
+        catch (LobbyException)
+        {
+            var error = await command
+                .FollowupAsync("Couldn't create a lobby, Codingame api is down or rememberMe cookie expired " +
+                               "and has to be updated in appsettings.json");
+            DeleteResponseAfterDelay(error, 10000);
+            return;
+        }
 
         mode = mode switch
         {
@@ -133,14 +145,14 @@ public class Program : InteractionModuleBase
             "RANDOM" => ":game_die: Random",
             _ => mode
         };
-        var link = await command
-            .FollowupAsync($"{mode}  -  {language}  -  started by {command.User.Mention}\n" +
+        var response = await command
+            .FollowupAsync($"{mode}  -  {(language == "Any" ? "Any language" : language)}  -  started by {command.User.Mention}\n" +
                         $"https://www.codingame.com/clashofcode/clash/{handle}");
-        LeaveClash(handle);
-        DeleteResponseAfterDelay(link, 300000);
+        LeaveLobbyWhenPlayerJoins(handle);
+        DeleteResponseAfterDelay(response, 300000);
     }
 
-    private async Task LeaveClash(string handle)
+    private async Task LeaveLobbyWhenPlayerJoins(string handle)
     {
         var playerCount = 1;
         while (playerCount == 1)

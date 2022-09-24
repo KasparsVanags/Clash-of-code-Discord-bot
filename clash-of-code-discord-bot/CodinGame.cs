@@ -12,7 +12,6 @@ public class CodinGame
 
     public CodinGame(string rememberMeCookie)
     {
-        //Cookie expires after 1 year
         if (string.IsNullOrEmpty(rememberMeCookie))
             throw new MissingCookieException("Codingame cookie not found, check appsettings.json");
 
@@ -29,7 +28,12 @@ public class CodinGame
             new object[] { _userId, languageArr, mode });
         var result = await response.Content.ReadFromJsonAsync<Lobby>();
 
-        return result == null ? "something broke, bot cookie expired?" : result.publicHandle;
+        if (result == null || string.IsNullOrEmpty(result.publicHandle))
+        {
+            throw new LobbyException("Couldn't create a lobby");
+        }
+
+        return result.publicHandle;
     }
 
     public async Task LeaveClash(string publicHandle)
@@ -46,15 +50,9 @@ public class CodinGame
 
     public async Task<List<string>> GetLanguageIds()
     {
-        List<string>? result = null;
-        while (result == null)
-        {
-            var response = await Request("ProgrammingLanguage/FindAllIds", Array.Empty<object>());
-            result = await response.Content.ReadFromJsonAsync<List<string>>();
-            await Task.Delay(500);
-        }
-
-        return result;
+        var response = await Request("ProgrammingLanguage/FindAllIds", Array.Empty<object>());
+        return await response.Content.ReadFromJsonAsync<List<string>>() ?? 
+               throw new LanguageIdException("Couldn't get language ids");
     }
 
     private async Task<HttpResponseMessage> Request(string request, object[] parameters)
@@ -64,7 +62,8 @@ public class CodinGame
         requestMessage.Content = JsonContent.Create(parameters);
         requestMessage.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=UTF-8");
 
+        
         return await _client
-            .SendAsync(requestMessage);
+                .SendAsync(requestMessage);
     }
 }
