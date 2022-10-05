@@ -13,3 +13,7 @@ Log into https://www.codingame.com/ with an account you'll use for the bot and o
 
 ### Discord token  
 Your Discord token can be found at https://discord.com/developers/applications/ in the bot tab.
+
+---
+
+Made after 1.5 - 2 months of learning C# so there could be some issues but it works!
