@@ -16,4 +16,4 @@ Your Discord token can be found at https://discord.com/developers/applications/ 
 
 ---
 
-Made after 1.5 - 2 months of learning C# so there could be some issues but it works!
+Made after 1.5 - 2 months of learning C# so it's a bit messy and there could be some issues but it works!
